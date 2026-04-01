@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Capsule</title>
+<meta name="description" content="L'app per progetti di gruppo temporanei. Aiuta il team a conoscersi, restare allineato e trasformare il lavoro in qualcosa da ricordare.">
+<meta name="theme-color" content="#0A0912">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0A0912;
+  --surface:#13111D;
+  --text:#F2F0EB;
+  --dim:#9994A8;
+  --coral:#F47B55;
+  --violet:#B07EFF;
+  --teal:#3DDDB6;
+  --gold:#C8A96E;
+}
+html{scroll-behavior:auto}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',-apple-system,sans-serif;
+  font-size:17px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+
+/* ── CANVAS ── */
+#gl{position:fixed;top:0;left:0;width:100%;height:100svh;pointer-events:none;z-index:1}
+
+/* ── OPENING ── */
+#opening-trigger{position:relative;z-index:2;height:300vh}
+#opening-overlay{
+  position:sticky;top:0;height:100svh;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  pointer-events:none;z-index:3;
+}
+#brand-reveal{
+  opacity:0;text-align:center;
+  transform:translateY(24px);
+  will-change:opacity,transform;
+}
+#brand-name{
+  font-family:'Sora',sans-serif;
+  font-size:clamp(52px,14vw,96px);
+  font-weight:700;letter-spacing:-.04em;
+  color:#fff;line-height:1;
+}
+#brand-tagline{
+  font-size:clamp(13px,2vw,15px);
+  color:rgba(255,255,255,.45);
+  letter-spacing:.14em;text-transform:uppercase;
+  font-weight:600;margin-top:12px;
+}
+#scroll-hint{
+  position:absolute;
+  bottom:max(40px,env(safe-area-inset-bottom,28px));
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  transition:opacity .4s ease;
+}
+.sc-label{font-size:10px;color:rgba(255,255,255,.3);letter-spacing:.14em;font-weight:600;text-transform:uppercase}
+.sc-arrow{
+  width:12px;height:12px;
+  border-right:1.5px solid rgba(255,255,255,.25);
+  border-bottom:1.5px solid rgba(255,255,255,.25);
+  transform:rotate(45deg);
+  animation:bob 2.2s ease-in-out infinite;
+}
+@keyframes bob{0%,100%{transform:rotate(45deg) translate(0,0);opacity:.35}50%{transform:rotate(45deg) translate(2px,2px);opacity:.65}}
+
+/* ── NAV ── */
+#site-nav{
+  position:fixed;top:0;left:0;right:0;
+  z-index:100;padding:0 24px;height:58px;
+  display:flex;align-items:center;justify-content:space-between;
+  opacity:0;pointer-events:none;
+  transition:opacity .5s ease,background .4s ease,backdrop-filter .4s ease,border-color .4s ease;
+  border-bottom:1px solid transparent;
+}
+#site-nav.visible{opacity:1;pointer-events:auto}
+#site-nav.scrolled{
+  background:rgba(10,9,18,.88);
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+  border-bottom-color:rgba(255,255,255,.05);
+}
+.nav-logo{
+  font-family:'Sora',sans-serif;font-size:13px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:#fff;
+}
+.btn-nav{
+  padding:8px 20px;
+  background:rgba(176,126,255,.1);
+  border:1px solid rgba(176,126,255,.25);
+  color:var(--violet);border-radius:100px;
+  text-decoration:none;font-weight:600;font-size:13px;
+  font-family:'DM Sans',sans-serif;
+  transition:background .2s ease,transform .2s ease;
+}
+.btn-nav:hover{background:rgba(176,126,255,.2);transform:translateY(-1px)}
+
+/* ── CONTENT ── */
+#content{position:relative;z-index:2;opacity:0;will-change:opacity}
+
+section{
+  width:100%;
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  position:relative;padding:96px 0;
+}
+section.full{min-height:100svh}
+.sep{height:72px}
+
+.w{width:100%;max-width:560px;padding:0 26px}
+.tc{text-align:center}
+
+/* ── TYPE ── */
+h1,h2{font-family:'Sora',sans-serif;font-weight:700;letter-spacing:-.03em;color:#fff}
+h2{font-size:clamp(26px,5.5vw,38px);line-height:1.18}
+
+.phrase{
+  font-family:'Sora',sans-serif;
+  font-size:clamp(22px,4.8vw,32px);
+  font-weight:700;line-height:1.22;
+  letter-spacing:-.025em;max-width:500px;color:#fff;
+}
+.lead{
+  color:rgba(255,255,255,.6);
+  font-size:clamp(15px,2.2vw,17px);
+  line-height:1.7;margin-top:16px;
+  max-width:440px;font-weight:400;
+}
+
+.grad{
+  background:linear-gradient(135deg,var(--coral),var(--violet),var(--teal));
+  background-size:200% 200%;
+  animation:grShift 4s ease-in-out infinite;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+@keyframes grShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+.tag{
+  display:inline-block;padding:5px 14px;border-radius:100px;
+  font-size:10px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:18px;
+  color:var(--teal);border:1px solid rgba(61,221,182,.2);
+  background:rgba(61,221,182,.05);
+}
+
+/* ── BUTTONS ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  padding:13px 28px;border-radius:100px;
+  font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;
+  text-decoration:none;cursor:pointer;border:none;
+  transition:transform .2s ease,opacity .2s ease,box-shadow .2s ease;
+  line-height:1;
+}
+.btn:hover{transform:translateY(-2px);opacity:.92;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.btn:active{transform:scale(.97)}
+.btn-primary{
+  background:linear-gradient(135deg,var(--coral),var(--violet));
+  color:#fff;
+}
+.btn-outline{
+  background:transparent;
+  border:1px solid rgba(176,126,255,.3);
+  color:var(--violet);
+}
+.btn-outline:hover{border-color:rgba(176,126,255,.55);background:rgba(176,126,255,.06)}
+
+/* ── HERO ── */
+.hero{text-align:center;min-height:100svh;padding-top:80px}
+.hero .w{display:flex;flex-direction:column;align-items:center}
+.hero h1{
+  font-size:clamp(24px,5.5vw,44px);line-height:1.14;
+  max-width:560px;margin-bottom:20px;
+}
+.hero .lead{text-align:center;margin-left:auto;margin-right:auto;margin-bottom:36px}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;justify-content:center}
+
+/* ── TIMELINE ── */
+.tl{display:flex;flex-direction:column;margin-top:28px;position:relative;padding-left:32px}
+.tl::before{
+  content:'';position:absolute;left:9px;top:14px;bottom:14px;width:2px;
+  background:linear-gradient(to bottom,var(--coral),var(--violet),var(--teal));
+  border-radius:1px;transform-origin:top;transform:scaleY(0);
+  transition:transform 1.4s cubic-bezier(.22,1,.36,1);
+}
+.tl.on::before{transform:scaleY(1)}
+.tl-s{
+  padding:16px 0;position:relative;
+  opacity:0;transform:translateX(-12px);
+  transition:all .6s cubic-bezier(.22,1,.36,1);
+}
+.tl-s.on{opacity:1;transform:translateX(0)}
+.tl-s::before{
+  content:'';position:absolute;left:-27px;top:22px;
+  width:10px;height:10px;border-radius:50%;
+  border:2px solid var(--violet);background:var(--bg);
+}
+.tl-s:nth-child(1)::before{border-color:var(--coral)}
+.tl-s:nth-child(2)::before{border-color:var(--violet)}
+.tl-s:nth-child(3)::before{border-color:var(--teal)}
+.tl-s:nth-child(4)::before{border-color:var(--gold)}
+.tl-t{font-family:'Sora',sans-serif;font-size:15px;font-weight:700;margin-bottom:4px;color:#fff}
+.tl-b{font-size:13px;color:rgba(255,255,255,.6);line-height:1.55;font-weight:400}
+
+/* ── FEATURES ── */
+.feats{display:flex;flex-direction:column;gap:12px;margin-top:28px}
+.ft{
+  display:flex;gap:16px;align-items:flex-start;
+  padding:20px;border-radius:16px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);
+  transition:border-color .3s ease;
+}
+.ft:hover{border-color:rgba(176,126,255,.12)}
+.ft-i{
+  width:42px;height:42px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.ft p{font-size:14px;color:rgba(255,255,255,.78);margin:0;line-height:1.6}
+.ft p b{color:#fff;font-weight:700}
+
+/* ── CHIPS ── */
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.chip{
+  padding:8px 18px;border-radius:100px;
+  font-size:13px;font-weight:500;color:rgba(255,255,255,.65);
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.03);
+}
+
+/* ── HELP LIST ── */
+.help-list{list-style:none;margin-top:20px;display:flex;flex-direction:column;gap:10px}
+.help-list li{
+  display:flex;align-items:baseline;gap:12px;
+  font-size:14px;color:rgba(255,255,255,.7);line-height:1.55;
+}
+.help-list li::before{content:'→';color:var(--violet);flex-shrink:0;font-weight:600}
+
+/* ── QUOTE CARD ── */
+.qcard{
+  background:rgba(255,255,255,.03);border-radius:20px;
+  padding:40px 32px;width:100%;
+  border:1px solid rgba(176,126,255,.1);
+  text-align:center;margin-top:28px;
+}
+.qcard p{
+  font-family:'Sora',sans-serif;
+  font-size:clamp(18px,4vw,24px);
+  font-weight:600;line-height:1.45;color:#fff;
+  letter-spacing:-.015em;
+}
+
+/* ── FINALE ── */
+.finale{text-align:center;min-height:80svh}
+.finale h2{font-size:clamp(26px,5.5vw,42px);max-width:520px;margin:0 auto 36px;line-height:1.22}
+.finale-brand{
+  font-family:'Sora',sans-serif;
+  font-size:clamp(52px,13vw,88px);
+  font-weight:700;letter-spacing:-.04em;
+  color:#fff;line-height:1;
+  margin-bottom:28px;
+}
+
+/* ── REVEALS ── */
+.rv{opacity:0;transform:translateY(28px)}
+.rv.on{
+  opacity:1;transform:translateY(0);
+  transition:opacity .9s cubic-bezier(.22,1,.36,1),transform .9s cubic-bezier(.22,1,.36,1);
+}
+.d1{transition-delay:.06s}.d2{transition-delay:.14s}.d3{transition-delay:.22s}.d4{transition-delay:.3s}
+
+/* ── GRAIN ── */
+body::after{
+  content:'';position:fixed;top:0;left:0;width:100%;height:100%;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.012'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:9999;
+}
+
+/* ── RESPONSIVE ── */
+@media(min-width:640px){
+  .w{max-width:600px;padding:0 40px}
+  section{padding:120px 0}
+}
+@media(min-width:1024px){
+  .w{max-width:660px;padding:0 60px}
+}
+
+/* ── REDUCED MOTION ── */
+@media(prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .rv,.rv.on{opacity:1;transform:none;transition:none}
+  #content{opacity:1!important}
+  #brand-reveal{opacity:1!important;transform:none!important}
+  #site-nav{opacity:1!important;pointer-events:auto!important}
+  #site-nav.scrolled{background:rgba(10,9,18,.9)}
+}
+</style>
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+
+<!-- OPENING SCROLL ZONE (300vh — capsule opens here) -->
+<div id="opening-trigger">
+  <div id="opening-overlay">
+    <div id="brand-reveal">
+      <div id="brand-name">capsule</div>
+      <div id="brand-tagline">progetti temporanei &middot; memorie permanenti</div>
+    </div>
+    <div id="scroll-hint">
+      <span class="sc-label">apri</span>
+      <div class="sc-arrow"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MINIMAL NAV (hidden until reveal) -->
+<nav id="site-nav" role="navigation" aria-label="Navigazione principale">
+  <span class="nav-logo" aria-hidden="true">capsule</span>
+  <a href="mailto:lofionoteam@gmail.com?subject=Capsule%20-%20Partecipo%20allo%20sviluppo&body=Ciao,%20mi%20piacerebbe%20saperne%20di%20pi%C3%B9%20su%20Capsule%20e%20capire%20come%20potrei%20partecipare%20allo%20sviluppo."
+     class="btn-nav">Partecipa</a>
+</nav>
+
+<!-- MAIN CONTENT (revealed after opening) -->
+<main id="content">
+
+<!-- ─── HERO ─── -->
+<section class="hero full" id="s-hero">
+  <div class="w">
+    <h1>E se il segreto per far funzionare un progetto fosse rendere le persone <span class="grad">felici di farne parte?</span></h1>
+    <p class="lead">L'app che aiuta i team di progetto a conoscersi meglio, restare allineati e trasformare il lavoro fatto insieme in qualcosa da ricordare.</p>
+    <div class="hero-cta">
+      <a href="mailto:lofionoteam@gmail.com?subject=Capsule%20-%20Partecipo%20allo%20sviluppo&body=Ciao,%20mi%20piacerebbe%20saperne%20di%20pi%C3%B9%20su%20Capsule%20e%20capire%20come%20potrei%20partecipare%20allo%20sviluppo."
+         class="btn btn-primary">Partecipa allo sviluppo</a>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ─── WHAT IT IS ─── -->
+<section id="s-what">
+  <div class="w rv">
+    <span class="tag">cosa è</span>
+    <p class="phrase">Non un altro tool.<br>Un <span class="grad">compagno di progetto.</span></p>
+    <p class="lead">Capsule è per team universitari, lab, hackathon, collaborazioni creative. Qualunque gruppo che nasce, lavora insieme, e poi finisce.</p>
+    <p class="lead" style="margin-top:10px">Non sostituisce Notion o Slack. Li accompagna, mettendo al centro le persone, la connessione e la memoria di quello che avete costruito insieme.</p>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ─── HOW IT WORKS ─── -->
+<section id="s-how">
+  <div class="w">
+    <div class="rv">
+      <span class="tag">come funziona</span>
+      <p class="phrase">Quattro passi.<br><span class="grad">Semplice.</span></p>
+    </div>
+    <div class="tl" id="timeline">
+      <div class="tl-s">
+        <div class="tl-t">Crea la capsula</div>
+        <div class="tl-b">Nome, date, tappe del progetto. La capsula è il vostro spazio condiviso.</div>
+      </div>
+      <div class="tl-s">
+        <div class="tl-t">Invita il team</div>
+        <div class="tl-b">Un link. Ognuno porta la sua scheda personale: come lavora meglio, quando rende di più, cosa porta nel gruppo.</div>
+      </div>
+      <div class="tl-s">
+        <div class="tl-t">Vivete il progetto</div>
+        <div class="tl-b">Check-in leggeri, note rapide, momenti da salvare. Capsule tiene il team connesso senza diventare un'altra cosa da gestire.</div>
+      </div>
+      <div class="tl-s">
+        <div class="tl-t">Sigillate e ricordate</div>
+        <div class="tl-b">Alla fine, la capsula si sigilla. Genera un recap visivo dell'esperienza. Qualcosa da aprire tra un anno e riconoscere.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ─── WHY DIFFERENT ─── -->
+<section id="s-why">
+  <div class="w rv">
+    <span class="tag">perché è diversa</span>
+    <p class="phrase">La maggior parte dei progetti finisce<br>e <span class="grad">non resta niente.</span></p>
+    <p class="lead">Il lavoro viene consegnato, il gruppo si dissolve. Nessuno ricorda davvero com'è stato. Le idee, le tensioni, i momenti buoni — spariti.</p>
+    <div class="feats" style="margin-top:24px">
+      <div class="ft rv d1">
+        <div class="ft-i" style="background:rgba(244,123,85,.08)">🧩</div>
+        <p><b>Le persone al centro.</b> Non solo i task. Capsule aiuta il team a capirsi, comunicare meglio, sentirsi meno soli nel progetto.</p>
+      </div>
+      <div class="ft rv d2">
+        <div class="ft-i" style="background:rgba(176,126,255,.08)">🔒</div>
+        <p><b>Conserva, non solo organizza.</b> Ogni progetto lascia qualcosa: note, momenti, connessioni. Capsule li raccoglie e li preserva.</p>
+      </div>
+      <div class="ft rv d3">
+        <div class="ft-i" style="background:rgba(61,221,182,.08)">🌱</div>
+        <p><b>Pensata per la fine.</b> La maggior parte degli strumenti si usa durante. Capsule pensa anche a dopo, trasformando l'esperienza in storia.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ─── WHO WE WANT ─── -->
+<section id="s-who">
+  <div class="w tc rv">
+    <span class="tag">chi vogliamo sentire</span>
+    <p class="phrase">Capsule è un concept.<br>Stiamo cercando <span class="grad">persone che ci credano.</span></p>
+    <p class="lead" style="margin-left:auto;margin-right:auto">Non abbiamo ancora un'app da mostrare. Abbiamo un'idea chiara, una visione forte e il bisogno reale di costruirla insieme alle persone giuste.</p>
+    <div class="chips" style="justify-content:center">
+      <span class="chip">Studenti</span>
+      <span class="chip">Designer UX/UI</span>
+      <span class="chip">Developer</span>
+      <span class="chip">Ricercatori</span>
+      <span class="chip">Creative</span>
+      <span class="chip">Team builder</span>
+      <span class="chip">Persone curiose</span>
+    </div>
+    <div style="margin-top:36px">
+      <a href="mailto:lofionoteam@gmail.com?subject=Capsule%20-%20Partecipo%20allo%20sviluppo&body=Ciao,%20mi%20piacerebbe%20saperne%20di%20pi%C3%B9%20su%20Capsule%20e%20capire%20come%20potrei%20partecipare%20allo%20sviluppo."
+         class="btn btn-primary">Partecipa allo sviluppo</a>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ─── WHAT PEOPLE CAN HELP WITH ─── -->
+<section id="s-help">
+  <div class="w rv">
+    <span class="tag">come puoi contribuire</span>
+    <p class="phrase">Non serve saper fare <span class="grad">tutto.</span></p>
+    <p class="lead">Ci sono molti modi per aiutare Capsule a diventare qualcosa di reale.</p>
+    <ul class="help-list">
+      <li>Feedback sull'idea e sul concept</li>
+      <li>Direzione UX e progettazione dell'interfaccia</li>
+      <li>Sviluppo front-end e prototipazione</li>
+      <li>Branding, naming, storytelling</li>
+      <li>Test del concept con team reali</li>
+      <li>Connessioni con lab, corsi o ambienti universitari</li>
+    </ul>
+    <div style="margin-top:36px">
+      <a href="mailto:lofionoteam@gmail.com?subject=Capsule%20-%20Voglio%20aiutare&body=Ciao,%20vorrei%20contribuire%20allo%20sviluppo%20di%20Capsule.%20Ecco%20come%20potrei%20aiutare:"
+         class="btn btn-outline">Scrivici</a>
+    </div>
+  </div>
+</section>
+
+<div class="sep"></div>
+
+<!-- ─── FINALE ─── -->
+<section class="finale full" id="s-finale">
+  <div class="w tc rv">
+    <h2>Ogni progetto è una storia.<br><span class="grad">Rendila una che vale la pena raccontare.</span></h2>
+    <div class="finale-brand" aria-hidden="true">capsule</div>
+    <a href="mailto:lofionoteam@gmail.com?subject=Capsule%20-%20Partecipo%20allo%20sviluppo&body=Ciao,%20mi%20piacerebbe%20saperne%20di%20pi%C3%B9%20su%20Capsule%20e%20capire%20come%20potrei%20partecipare%20allo%20sviluppo."
+       class="btn btn-primary">Partecipa allo sviluppo</a>
+  </div>
+</section>
+
+<div style="height:max(80px,env(safe-area-inset-bottom,40px))"></div>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+gsap.registerPlugin(ScrollTrigger);
+
+const W = () => window.innerWidth;
+const H = () => window.innerHeight;
+
+const renderer = new THREE.WebGLRenderer({
+  canvas: document.getElementById('gl'),
+  alpha: true, antialias: true
+});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(W(), H());
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.1;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(48, W() / H(), 0.1, 200);
+camera.position.z = 7;
+
+/* ══════════════════════════════════════
+   TIME CAPSULE FACTORY
+   ══════════════════════════════════════ */
+function makeCapsule(opts) {
+  const {
+    rad = 0.52, lidH = 0.52, baseH = 0.78,
+    color = '#2e2a3a', lidColor = '#3a3048',
+    emissiveColor = '#3a1e6a', emissiveIntensity = 0.08,
+  } = opts || {};
+
+  const SEG = 48;
+
+  const mainMat = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(color),
+    roughness: 0.28, metalness: 0.72,
+    clearcoat: 0.65, clearcoatRoughness: 0.12,
+    emissive: new THREE.Color(emissiveColor),
+    emissiveIntensity,
+  });
+  const lidMat = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color(lidColor),
+    roughness: 0.25, metalness: 0.75,
+    clearcoat: 0.7, clearcoatRoughness: 0.1,
+    emissive: new THREE.Color(emissiveColor),
+    emissiveIntensity: emissiveIntensity * 0.8,
+  });
+  const goldMat = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color('#a8862e'),
+    roughness: 0.18, metalness: 0.92,
+    emissive: new THREE.Color('#5c3e00'),
+    emissiveIntensity: 0.1,
+  });
+
+  const group = new THREE.Group();
+
+  /* ── BASE (bottom half, stays put) ── */
+  const baseGroup = new THREE.Group();
+
+  // Cylinder body
+  baseGroup.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(rad, rad, baseH, SEG, 1, true), mainMat
+  ));
+  // Bottom cap
+  const botCap = new THREE.Mesh(
+    new THREE.CylinderGeometry(rad * 0.96, rad * 0.90, 0.055, SEG), mainMat
+  );
+  botCap.position.y = -baseH / 2 - 0.027;
+  baseGroup.add(botCap);
+
+  // Inner rim (gold ring where lid seats)
+  const innerRim = new THREE.Mesh(
+    new THREE.CylinderGeometry(rad - 0.035, rad - 0.035, 0.075, SEG), goldMat
+  );
+  innerRim.position.y = baseH / 2 - 0.025;
+  baseGroup.add(innerRim);
+
+  // Equatorial seam band
+  const seamGeo = new THREE.TorusGeometry(rad * 1.006, 0.016, 8, SEG);
+  const seamMat = new THREE.MeshBasicMaterial({
+    color: 0xb88c2c, transparent: true, opacity: 0.55
+  });
+  const seam = new THREE.Mesh(seamGeo, seamMat);
+  seam.rotation.x = Math.PI / 2;
+  seam.position.y = baseH / 2;
+  baseGroup.add(seam);
+
+  // Latch block
+  const latch = new THREE.Mesh(
+    new THREE.BoxGeometry(0.05, 0.09, 0.042), goldMat
+  );
+  latch.position.set(rad + 0.018, baseH / 2 + 0.006, 0);
+  baseGroup.add(latch);
+
+  // Latch bar
+  const bar = new THREE.Mesh(
+    new THREE.BoxGeometry(0.012, 0.065, 0.012), goldMat
+  );
+  bar.position.set(rad + 0.052, baseH / 2 + 0.006, 0);
+  baseGroup.add(bar);
+
+  // Inner core glow (visible when open)
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: 0xffc87a, transparent: true, opacity: 0
+  });
+  const core = new THREE.Mesh(
+    new THREE.SphereGeometry(rad * 0.5, 20, 20), coreMat
+  );
+  core.position.y = 0;
+  baseGroup.add(core);
+
+  // Inner light
+  const innerLight = new THREE.PointLight(0xff9030, 0, 4);
+  innerLight.position.y = 0.2;
+  baseGroup.add(innerLight);
+
+  baseGroup.position.y = -0.1;
+  group.add(baseGroup);
+
+  /* ── LID (top half, lifts on open) ── */
+  const lidGroup = new THREE.Group();
+
+  // Lid cylinder body
+  lidGroup.add(new THREE.Mesh(
+    new THREE.CylinderGeometry(rad, rad, lidH, SEG, 1, true), lidMat
+  ));
+
+  // Lid top disk
+  const lidTopDisk = new THREE.Mesh(
+    new THREE.CylinderGeometry(rad * 0.93, rad * 0.96, 0.06, SEG), lidMat
+  );
+  lidTopDisk.position.y = lidH / 2 + 0.03;
+  lidGroup.add(lidTopDisk);
+
+  // Lid crown dome (very subtle)
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(rad * 0.9, SEG, 16, 0, Math.PI * 2, 0, Math.PI * 0.22),
+    lidMat
+  );
+  dome.position.y = lidH / 2 + 0.06;
+  lidGroup.add(dome);
+
+  // Lid lower rim
+  const lidRim = new THREE.Mesh(seamGeo.clone(), new THREE.MeshBasicMaterial({
+    color: 0xb88c2c, transparent: true, opacity: 0.35
+  }));
+  lidRim.rotation.x = Math.PI / 2;
+  lidRim.position.y = -lidH / 2;
+  lidGroup.add(lidRim);
+
+  // Lid starts seated on base
+  lidGroup.position.y = baseGroup.position.y + baseH / 2 + lidH / 2;
+  group.add(lidGroup);
+
+  return { group, baseGroup, lidGroup, mainMat, lidMat, coreMat, innerLight, seamMat };
+}
+
+/* ── MAIN CAPSULE ── */
+const main = makeCapsule({
+  rad: 0.52, lidH: 0.52, baseH: 0.78,
+  color: '#2e2a3a', lidColor: '#3a3048',
+  emissiveColor: '#3a1e6a', emissiveIntensity: 0.08,
+});
+const MAIN_LID_REST_Y = -0.1 + 0.78 / 2 + 0.52 / 2; // 0.55
+main.group.scale.setScalar(0); // hidden until intro tween
+scene.add(main.group);
+
+/* ── BACKGROUND CAPSULES ── */
+const isMobile = W() < 640;
+const bgDefs = isMobile
+  ? [
+    { pos: [-2.2, 0.4, -2.5], scale: 0.24 },
+    { pos: [2.4, -0.5, -3],   scale: 0.20 },
+  ]
+  : [
+    { pos: [-3.2,  0.5, -2.5], scale: 0.26 },
+    { pos: [ 3.0, -0.4, -3.0], scale: 0.30 },
+    { pos: [-2.0, -1.3, -3.5], scale: 0.22 },
+    { pos: [ 2.7,  1.5, -3.8], scale: 0.28 },
+    { pos: [ 0.3,  2.1, -4.2], scale: 0.20 },
+  ];
+
+const bgCapsules = bgDefs.map(def => {
+  const c = makeCapsule({
+    color: '#1a1726', lidColor: '#201c2e',
+    emissiveColor: '#1a0e40', emissiveIntensity: 0.05,
+  });
+  c.group.position.set(...def.pos);
+  c.group.scale.setScalar(def.scale);
+  c.group.rotation.set(
+    (Math.random() - 0.5) * 0.5,
+    Math.random() * Math.PI * 2,
+    (Math.random() - 0.5) * 0.4
+  );
+  c.floatBaseY = def.pos[1];
+  c.floatPhase = Math.random() * Math.PI * 2;
+  c.floatAmp = 0.06 + Math.random() * 0.07;
+  c.rotSpeed = 0.003 + Math.random() * 0.004;
+  scene.add(c.group);
+  return c;
+});
+
+/* ── STARS ── */
+const starCount = isMobile ? 180 : 320;
+const starGeo = new THREE.BufferGeometry();
+const sPos = new Float32Array(starCount * 3);
+for (let i = 0; i < starCount; i++) {
+  sPos[i * 3]     = (Math.random() - 0.5) * 80;
+  sPos[i * 3 + 1] = (Math.random() - 0.5) * 80;
+  sPos[i * 3 + 2] = (Math.random() - 0.5) * 60 - 10;
+}
+starGeo.setAttribute('position', new THREE.BufferAttribute(sPos, 3));
+const starMat = new THREE.PointsMaterial({
+  color: 0xffffff, size: 0.055,
+  transparent: true, opacity: 0.45, sizeAttenuation: true,
+});
+scene.add(new THREE.Points(starGeo, starMat));
+
+/* ── LIGHTS ── */
+scene.add(new THREE.AmbientLight(0x9988bb, 0.38));
+const key = new THREE.DirectionalLight(0xffe8d0, 0.9);
+key.position.set(3, 5, 5);
+scene.add(key);
+const rim = new THREE.PointLight(0xB07EFF, 0.65, 14);
+rim.position.set(-4, 1, 3);
+scene.add(rim);
+const warm = new THREE.PointLight(0xF47B55, 0.35, 12);
+warm.position.set(2, -2, 4);
+scene.add(warm);
+const fill = new THREE.PointLight(0x3DDDB6, 0.28, 10);
+fill.position.set(0, -3, 2);
+scene.add(fill);
+
+/* ── MOUSE PARALLAX ── */
+let mx = 0, my = 0;
+document.addEventListener('mousemove', e => {
+  mx = (e.clientX / W() - 0.5) * 2;
+  my = (e.clientY / H() - 0.5) * 2;
+});
+
+/* ── SCENE STATE ── */
+let capScale = 0, capY = 0, openP = 0;
+
+/* ── RENDER LOOP ── */
+const clock = new THREE.Clock();
+function animate() {
+  requestAnimationFrame(animate);
+  const t = clock.getElapsedTime();
+
+  // Main capsule orientation
+  main.group.rotation.y += (mx * 0.22 - main.group.rotation.y) * 0.022;
+  main.group.rotation.x += (-my * 0.10 - main.group.rotation.x) * 0.022;
+  main.group.rotation.y += 0.0012;
+
+  main.group.position.y = capY + Math.sin(t * 0.72) * 0.045;
+  main.group.scale.setScalar(capScale);
+
+  // Lid opens: lifts up + slight tilt
+  main.lidGroup.position.y = MAIN_LID_REST_Y + openP * 2.4;
+  main.lidGroup.rotation.z = openP * 0.22;
+
+  // Inner glow as lid opens
+  main.coreMat.opacity = openP * 0.8;
+  main.innerLight.intensity = openP * 2.8;
+  main.seamMat.opacity = 0.55 - openP * 0.35;
+
+  // Camera subtle zoom during open
+  camera.position.z = 7 - openP * 1.6;
+
+  // BG capsules gentle float + rotate
+  bgCapsules.forEach(c => {
+    c.group.rotation.y += c.rotSpeed;
+    c.group.rotation.x += c.rotSpeed * 0.35;
+    c.group.position.y = c.floatBaseY + Math.sin(t * 0.55 + c.floatPhase) * c.floatAmp;
+  });
+
+  renderer.render(scene, camera);
+}
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = W() / H();
+  camera.updateProjectionMatrix();
+  renderer.setSize(W(), H());
+});
+
+/* ══════════════════════════════════════
+   GSAP — OPENING INTRO
+   ══════════════════════════════════════ */
+
+// Capsule appears on load
+gsap.to({ v: 0 }, {
+  v: 0.85, duration: 1.8, ease: 'power3.out',
+  onUpdate() { capScale = this.targets()[0].v; }
+});
+gsap.to('#scroll-hint', { opacity: 0.6, duration: 0.6, delay: 1.4, ease: 'power2.out' });
+
+// Opening scroll: capsule lid opens, brand appears
+ScrollTrigger.create({
+  trigger: '#opening-trigger',
+  start: 'top top',
+  end: 'bottom top',
+  scrub: 1.4,
+  onUpdate: self => {
+    const p = self.progress;
+
+    // Lid opens from 30% of scroll
+    openP = Math.max(0, Math.min((p - 0.15) / 0.65, 1));
+
+    // Scale up subtly as it opens
+    capScale = 0.85 + p * 0.22;
+
+    // Hide scroll hint
+    if (p > 0.05) {
+      document.getElementById('scroll-hint').style.opacity = Math.max(0, 0.6 - p * 8);
+    }
+
+    // Brand reveals from 45% scroll progress
+    if (p > 0.45) {
+      const brandP = Math.min((p - 0.45) * 3.6, 1);
+      const brandEl = document.getElementById('brand-reveal');
+      brandEl.style.opacity = brandP;
+      brandEl.style.transform = `translateY(${24 - brandP * 24}px)`;
+    }
+  },
+  onLeave: () => {
+    // Reveal site content
+    gsap.to('#content', { opacity: 1, duration: 0.9, ease: 'power2.out' });
+    const nav = document.getElementById('site-nav');
+    nav.classList.add('visible');
+    gsap.to(nav, { opacity: 1, duration: 0.5, ease: 'power2.out' });
+  },
+  onEnterBack: () => {
+    gsap.to('#content', { opacity: 0, duration: 0.35 });
+    document.getElementById('site-nav').classList.remove('visible', 'scrolled');
+  }
+});
+
+// Nav gains scrolled style when content is past top
+ScrollTrigger.create({
+  trigger: '#content',
+  start: 'top 58px',
+  onEnter: () => document.getElementById('site-nav').classList.add('scrolled'),
+  onLeaveBack: () => document.getElementById('site-nav').classList.remove('scrolled'),
+});
+
+/* ══════════════════════════════════════
+   GSAP — CONTENT SCROLL EFFECTS
+   ══════════════════════════════════════ */
+
+// What section: capsule shrinks back
+ScrollTrigger.create({
+  trigger: '#s-what', start: 'top 75%', end: 'bottom 30%', scrub: 2,
+  onUpdate: self => {
+    capScale = 1.07 - self.progress * 0.38;
+    capY = 0;
+  }
+});
+
+// How section: capsule drifts slightly
+ScrollTrigger.create({
+  trigger: '#s-how', start: 'top 70%', end: 'bottom 30%', scrub: 2,
+  onUpdate: self => {
+    capScale = 0.7;
+    capY = -self.progress * 0.18;
+  }
+});
+
+// Why section: capsule returns, emissive brightens
+ScrollTrigger.create({
+  trigger: '#s-why', start: 'top 70%', end: 'bottom 30%', scrub: 1.5,
+  onUpdate: self => {
+    const p = self.progress;
+    capScale = 0.68 + p * 0.22;
+    starMat.opacity = 0.45 + p * 0.22;
+    main.mainMat.emissiveIntensity = 0.08 + p * 0.1;
+  }
+});
+
+// Who section: capsule floats center
+ScrollTrigger.create({
+  trigger: '#s-who', start: 'top 70%', end: 'bottom 30%', scrub: 1.5,
+  onUpdate: self => {
+    capScale = 0.9 + self.progress * 0.12;
+    capY = -self.progress * 0.1;
+  }
+});
+
+// Finale: crescendo
+ScrollTrigger.create({
+  trigger: '#s-finale', start: 'top 80%', end: 'center center', scrub: 1.5,
+  onUpdate: self => {
+    const p = self.progress;
+    capScale = 0.85 + p * 0.4;
+    capY = -p * 0.08;
+    main.mainMat.emissiveIntensity = 0.08 + p * 0.16;
+    main.lidMat.emissiveIntensity = 0.06 + p * 0.12;
+    rim.intensity = 0.65 + p * 0.55;
+    warm.intensity = 0.35 + p * 0.25;
+  }
+});
+
+/* ══════════════════════════════════════
+   REVEAL ANIMATIONS
+   ══════════════════════════════════════ */
+document.querySelectorAll('.rv').forEach(el => {
+  ScrollTrigger.create({
+    trigger: el, start: 'top 85%', once: true,
+    onEnter: () => el.classList.add('on')
+  });
+});
+
+// Timeline
+const tlEl = document.getElementById('timeline');
+ScrollTrigger.create({
+  trigger: tlEl, start: 'top 75%', once: true,
+  onEnter: () => {
+    tlEl.classList.add('on');
+    tlEl.querySelectorAll('.tl-s').forEach((s, i) => {
+      setTimeout(() => s.classList.add('on'), 200 + i * 220);
+    });
+  }
+});
+</script>
+</body>
+</html>
